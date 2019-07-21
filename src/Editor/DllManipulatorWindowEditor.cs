@@ -1,12 +1,15 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.Compilation;
+using System.IO;
+using System;
 
 namespace UnityNativeTool.Internal
 {
     public class DllManipulatorWindowEditor : EditorWindow
     {
-        [MenuItem("Window/Dll manipulator")]
 
         private static readonly GUIContent TARGET_ALL_NATIVE_FUNCTIONS_GUI_CONTENT = new GUIContent("All native functions",
             "If true, all found native functions will be mocked.\n\n" +
@@ -51,6 +54,7 @@ namespace UnityNativeTool.Internal
             "Use only if you are sure no other thread will be call mocked natives.");
         private static readonly TimeSpan ASSEMBLIES_REFRESH_INTERVAL = TimeSpan.FromSeconds(1);
 
+        [MenuItem("Window/Dll manipulator")]
         static void Init()
         {
             EditorWindow.GetWindow(typeof(DllManipulatorWindowEditor));
@@ -60,12 +64,6 @@ namespace UnityNativeTool.Internal
         private bool _showTargetAssemblies = true;
         private DateTime _lastGetAssemblyCall;
         private Assembly[] _allAssembliesCache = null;
-
-        public DllManipulatorWindowEditor()
-        {
-            EditorApplication.pauseStateChanged += _ => Repaint();
-            EditorApplication.playModeStateChanged += _ => Repaint();
-        }
 
         void OnGUI()
         {
