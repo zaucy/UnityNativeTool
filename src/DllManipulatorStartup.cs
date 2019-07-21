@@ -1,19 +1,19 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Threading;
 using System.Linq;
 using UnityEngine;
+using UnityEditor;
 using UnityNativeTool.Internal;
 
 namespace UnityNativeTool
 {
-    [ExecuteInEditMode]
-    public class DllManipulatorScript : MonoBehaviour
-    {
-        private static DllManipulatorScript _singletonInstance = null;
-        public TimeSpan? InitializationTime { get; private set; } = null;
-        public DllManipulatorOptions Options = new DllManipulatorOptions()
-        {
+
+    [InitializeOnLoad]
+    public class DllManipulatorStartup {
+            public static TimeSpan? InitializationTime { get; private set; } = null;
+            public static DllManipulatorOptions Options = new DllManipulatorOptions()
+                {
 #if UNITY_STANDALONE_WIN
             dllPathPattern = "{assets}/Plugins/__{name}.dll",
 #elif UNITY_STANDALONE_LINUX
@@ -32,25 +32,11 @@ namespace UnityNativeTool
             onlyInEditor = true,
         };
 
-        private void OnEnable()
-        {
+        static DllManipulatorStartup() {
 #if !UNITY_EDITOR
             if (Options.onlyInEditor)
                 return;
 #endif
-
-            if (_singletonInstance != null)
-            {
-                if (_singletonInstance != this)
-                    Destroy(gameObject);
-
-                return;
-            }
-            _singletonInstance = this;
-#if !UNITY_EDITOR
-            DontDestroyOnLoad(gameObject);
-#endif
-
             var timer = System.Diagnostics.Stopwatch.StartNew();
             DllManipulator.SetUnityContext(Thread.CurrentThread.ManagedThreadId, Application.dataPath);
             DllManipulator.Options = Options;
@@ -97,4 +83,5 @@ namespace UnityNativeTool
             DllManipulator.ClearCrashLogs();
         }
     }
+
 }
