@@ -18,6 +18,8 @@ namespace UnityNativeTool.Internal
             "If true, native functions will be mocked only in assembly that contains DllManipulator (usually Assembly-CSharp)");
         private static readonly GUIContent ONLY_IN_EDITOR = new GUIContent("Only in editor",
             "Whether to run only inside editor (which is recommended).");
+        private static readonly GUIContent HOT_RELOAD = new GUIContent("Hot reload",
+            "Whether to hot reload new dlls. New dlls are any dll matching the dll path pattern with ~ append to the end of it.");
         private static readonly GUIContent TARGET_ASSEMBLIES_GUI_CONTENT = new GUIContent("Target assemblies",
             "Choose from which assemblies to mock native functions");
         private static readonly GUIContent DLL_PATH_PATTERN_GUI_CONTENT = new GUIContent("DLL path pattern", 
@@ -163,6 +165,13 @@ namespace UnityNativeTool.Internal
 
                     EditorGUILayout.LabelField($"[{state}] {dll.name}");
                     EditorGUILayout.LabelField(dll.path);
+                    // if (dll.isLoaded)
+                    {
+                        if (GUILayout.Button($"Reload {dll.name}"))
+                        {
+                            DllManipulator.Reload(dll.name);
+                        }
+                    }
                     isFirstDll = false;
                 }
                 EditorGUI.indentLevel = prevIndent;
@@ -227,8 +236,10 @@ namespace UnityNativeTool.Internal
 
             options.onlyInEditor = EditorGUILayout.Toggle(ONLY_IN_EDITOR, options.onlyInEditor);
 
+            options.onlyInEditor = EditorGUILayout.Toggle(HOT_RELOAD, options.onlyInEditor);
+
             options.dllPathPattern = EditorGUILayout.TextField(DLL_PATH_PATTERN_GUI_CONTENT, options.dllPathPattern);
-            
+
             options.loadingMode = (DllLoadingMode)EditorGUILayout.EnumPopup(DLL_LOADING_MODE_GUI_CONTENT, options.loadingMode);
 
 #if UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX

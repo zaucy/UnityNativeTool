@@ -7,6 +7,7 @@ using UnityNativeTool.Internal;
 
 namespace UnityNativeTool
 {
+    [ExecuteInEditMode]
     public class DllManipulatorScript : MonoBehaviour
     {
         private static DllManipulatorScript _singletonInstance = null;
@@ -46,7 +47,9 @@ namespace UnityNativeTool
                 return;
             }
             _singletonInstance = this;
+#if !UNITY_EDITOR
             DontDestroyOnLoad(gameObject);
+#endif
 
             var timer = System.Diagnostics.Stopwatch.StartNew();
             DllManipulator.SetUnityContext(Thread.CurrentThread.ManagedThreadId, Application.dataPath);

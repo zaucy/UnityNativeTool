@@ -6,6 +6,7 @@ namespace UnityNativeTool.Internal
     internal class NativeDll
     {
         public readonly string name;
+        public readonly string originalPath;
         public string path;
         public IntPtr handle = IntPtr.Zero;
         public bool loadingError = false;
@@ -16,6 +17,7 @@ namespace UnityNativeTool.Internal
         {
             this.name = name;
             this.path = path;
+            this.originalPath = path;
         }
     }
 

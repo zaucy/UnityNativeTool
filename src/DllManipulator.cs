@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.IO;
+using System.Collections;
 using UnityEngine;
 
 namespace UnityNativeTool.Internal
@@ -65,6 +66,64 @@ namespace UnityNativeTool.Internal
             }
         }
 
+        private static void UnloadDll(NativeDll dll) {
+            bool success = SysUnloadDll(dll.handle);
+            dll.handle = IntPtr.Zero;
+
+            //Reset error states at unload
+            dll.loadingError = false;
+            dll.symbolError = false;
+
+            foreach (var func in dll.functions)
+            {
+                func.@delegate = null;
+            }
+
+            if (!success)
+                Debug.LogWarning($"Error while unloading DLL \"{dll.name}\" at path \"{dll.path}\"");
+        }
+
+        private static void FindLatestHotreload(NativeDll dll) {
+            var dllDirname = Path.GetDirectoryName(dll.path);
+            var files = Directory.GetFiles(
+                dllDirname,
+                Path.GetFileName(dll.originalPath) + "*~",
+                SearchOption.TopDirectoryOnly
+            );
+
+            Array.Sort(files);
+
+            if (files.Length > 0)
+            {
+                var file = files[files.Length - 1];
+                dll.path = file;
+            }
+        }
+
+        public static void Reload(String dllName) {
+            _nativeFunctionLoadLock.EnterWriteLock();
+
+            try
+            {
+                if (_dlls.TryGetValue(dllName, out NativeDll dll))
+                {
+                    if (dll.handle != IntPtr.Zero)
+                    {
+                        UnloadDll(dll);
+                    }
+
+                    FindLatestHotreload(dll);
+
+                    foreach (var nativeFunction in dll.functions)
+                    {
+                        LoadTargetFunction(nativeFunction);
+                    }
+                }
+            } finally {
+                _nativeFunctionLoadLock.ExitWriteLock();
+            }
+        }
+
         /// <summary>
         /// Unloads all DLLs and functions currently loaded
         /// </summary>
@@ -77,20 +136,7 @@ namespace UnityNativeTool.Internal
                 {
                     if (dll.handle != IntPtr.Zero)
                     {
-                        bool success = SysUnloadDll(dll.handle);
-                        dll.handle = IntPtr.Zero;
-
-                        //Reset error states at unload
-                        dll.loadingError = false;
-                        dll.symbolError = false;
-
-                        foreach (var func in dll.functions)
-                        {
-                            func.@delegate = null;
-                        }
-
-                        if (!success)
-                            Debug.LogWarning($"Error while unloading DLL \"{dll.name}\" at path \"{dll.path}\"");
+                        UnloadDll(dll);
                     }
                 }
             }
@@ -196,6 +242,7 @@ namespace UnityNativeTool.Internal
                 {
                     dllPath = ApplyDirectoryPathMacros(Options.dllPathPattern).Replace(DLL_PATH_PATTERN_DLL_NAME_MACRO, dllName);
                     dll = new NativeDll(dllName, dllPath);
+                    FindLatestHotreload(dll);
                     _dlls.Add(dllName, dll);
                 }
 
