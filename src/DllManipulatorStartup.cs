@@ -3,13 +3,14 @@ using System.Reflection;
 using System.Threading;
 using System.Linq;
 using UnityEngine;
-using UnityEditor;
 using UnityNativeTool.Internal;
 
 namespace UnityNativeTool
 {
 
-    [InitializeOnLoad]
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoad]
+#endif
     public class DllManipulatorStartup {
             public static TimeSpan? InitializationTime { get; private set; } = null;
             public static DllManipulatorOptions Options = new DllManipulatorOptions()
